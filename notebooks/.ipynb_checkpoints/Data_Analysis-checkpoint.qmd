@@ -1,0 +1,549 @@
+---
+title: Real Estate Dataset -Exploratory and Descriptive Analysis
+author:
+  - name: "Natacha Iradukunda and Gemima Grace Wishavura"
+    affiliation: "Junior Data Analysts"
+
+date: "2025-06-28"
+format: 
+  html:
+    page-layout: full
+    self-contained: true
+    code-fold: true
+    code-tools: true
+    code-block-bg: true
+    code-block-border-left: "#31BAE9"
+    number-sections: true
+    number-tables: true
+    warning: false
+    toc: true
+    toc-location: left
+    toc-title: Contents
+jupyter: python3
+---
+
+In this notebook, we carry out an in-depth exploratory and descriptive analysis of Real Estate Dataset, a widely used dataset for income prediction tasks based on assesed value,sales ratio ans sales amount attributes.
+
+This phase of analysis is essential for uncovering patterns, detecting potential biases, and gaining intuition about the dataset’s structure before applying any modelling procedures. We examine the distribution of key numerical and categorical variables, investigate relationships between assesed value and sales amount, and use visualizations to summarize insights.
+
+
+
+We begin our analysis by importing the core Python libraries required for **data handling**, **numerical computation**, **visualization**, and **directory management**:
+
+- `pandas`: Enables efficient manipulation, filtering, and aggregation of structured tabular data, forming the backbone of our analysis pipeline.
+
+- `numpy`: Provides support for fast numerical operations, array-based computation, and statistical routines.
+
+- `os`: Facilitates interaction with the file system, allowing us to construct flexible and portable directory paths for data and output management.
+
+- `plotly.express`: A high-level graphing library that enables the creation of interactive, publication-quality visualizations, which we use extensively to uncover patterns and present insights throughout the notebook.
+
+```{python}
+import pandas as pd 
+import numpy as np 
+import os 
+import plotly.express as px
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+
+## Define and Create Directory Paths
+
+To ensure reproducibility and organized storage, we programmatically create directories if they don't already exist for:
+
+- **raw data**
+- **processed data**
+- **results**
+- **documentation**
+
+These directories will store intermediate and final outputs for reproducibility.
+
+
+```{python}
+#| echo: false
+# Get working directory 
+current_dir = os.getcwd()
+
+# Go one directory up to the root directory 
+project_root_dir = os.path.dirname(current_dir)
+
+data_dir = os.path.join(project_root_dir, 'data')
+raw_dir = os.path.join(data_dir,'raw')
+processed_dir = os.path.join(data_dir,'processed')
+
+# Define paths to results folder 
+results_dir = os.path.join(project_root_dir,'results')
+
+# Define paths to docs folder 
+docs_dir = os.path.join(project_root_dir,'docs') 
+
+#Create directories if they do not exist 
+os.makedirs(raw_dir,exist_ok= True)
+os.makedirs(processed_dir,exist_ok= True)
+os.makedirs(results_dir,exist_ok= True)
+os.makedirs(data_dir,exist_ok= True)
+```
+
+## Loading the Cleaned Dataset
+
+We load the cleaned version of the UCI Adult Income Dataset from the processed data directory into a Pandas DataFrame. The `head(10)` function shows the first ten records, giving a glimpse into the data columns such as `Town`, `Address`, `Property Type`, etc.
+
+::: {.panel-tabset}
+## Output {.active}
+```{python}
+#| label: adult-income
+#| tbl-cap: Adult Income Dataset
+
+real_estate_filename = os.path.join(processed_dir, 'real_estate_cleaned.csv')
+real_estate = pd.read_csv(real_estate_filename)
+real_estate
+```
+
+## Code
+
+```{python}
+#| output: false
+real_estate_filename = os.path.join(processed_dir, 'real_estate_cleaned.csv')
+real_estate = pd.read_csv(real_estate_filename)
+real_estate
+```
+
+:::
+## Dataset Dimensions and Data Types
+
+Here, we examine the structure of the dataset:
+
+- There are *143,967* entries and *10* variables.
+- The dataset includes both **numerical** (e.g., `list year`, `dates recorded`) and **categorical** variables (e.g., `town`, `property type`).
+
+Understanding data types and null entries is essential before proceeding with analysis.
+
+```{python}
+#| echo: false
+#| output: false
+real_estate.shape
+```
+
+```{python}
+#| echo: false
+#| output: false
+real_estate.info()
+```
+
+```{python}
+#| label: tbl-dataset-overview
+#| tbl-cap: Overview of dataset columns, their data types, and the count of missing values in each column.
+summary_df = pd.DataFrame({
+    'Column': real_estate.columns,
+    'Data Type': real_estate.dtypes.values,
+    'Missing Values': real_estate.isnull().sum().values
+})
+summary_df
+```
+
+## Summary Statistics: Numerical Variables
+
+```{python}
+#| label: tbl-summary-numerical
+#| tbl-cap: Summary statistics for numerical variables in the dataset, including count, mean, standard deviation, min, and quartile values.
+real_estate.describe()
+```
+
+This summary provides a snapshot of key distribution characteristics. We observe that:
+
+- Serial Number is a unique identifier, ranging widely due to the sequential nature of property listings. It is not used for statistical analysis but ensures data integrity.
+
+- List Year ranges from 2016 to 2019. This indicates that the dataset covers four years of listing activity, allowing for temporal trend analysis. The values are evenly distributed across these years.
+
+- Assessed Value ranges from 1,680 to 380,370. This variable shows some skewness toward higher property values. The average lies below the 75th percentile, indicating that while most properties are modestly valued, a few high-value properties exist and pull the mean upward.
+
+- Sale Amount ranges from 2,000 to 684,000 after outlier removal. Like Assessed Value, it is right-skewed, with many properties clustered around typical residential prices and a few much higher-value sales. The median is a better central measure here.
+
+- Sales Ratio ranges from ~0.29 to 1.07. A value of 1 represents a perfect match between sale amount and assessed value. Most values lie below 1, indicating that many properties sold for less than their assessed value. This ratio helps in evaluating market valuation accuracy across towns or years.
+
+
+
+## Summary Statistics: Categorical Variables
+
+```{python}
+#| label: tbl-summary-categorical
+#| tbl-cap: Summary statistics for categorical variables in the dataset, including the number of unique values, most frequent category (top), and its frequency (freq).
+real_estate.describe(include='object')
+```
+
+This section highlights the composition and variety within the categorical features of the dataset:
+
+- Date Recorded spans from 2016 to 2020, capturing the transaction recording date. This field is useful for tracking seasonal or year-specific market behavior. The format is string-based, and cleaning may be required before time series analysis.
+
+- Town includes 169 unique town names. This variable is crucial for geographic segmentation. Some towns have a significantly higher number of property sales, which could be indicative of population density or economic activity.
+
+- Address is a string-based location descriptor. While useful for identifying specific properties, it often includes inconsistent formatting or missing values (e.g., 'nan'), making it less reliable for grouping without cleaning.
+
+- Property Type is consistent across the dataset with a single value: Residential. This simplifies analysis, as there's no need to disaggregate by different property purposes like commercial or industrial.
+
+- Residential Type includes five subtypes: Condo, Single Family, Two Family, Three Family, and Four Family. These categories reflect structural distinctions and can heavily influence sale amounts and assessment values. For example, single-family homes may generally command higher per-unit values than multi-family properties.
+
+
+
+
+## Visualisation.
+
+### Number of Properties By Sales Amount
+
+
+```{python}
+#| warning: false
+plt.figure(figsize=(10, 6))
+sns.histplot(real_estate['Sale Amount'], bins=30, kde=True, color='skyblue')
+
+plt.title('Distribution of Sale Amounts')
+plt.xlabel('Sale Amount')
+plt.ylabel('Number of Properties')
+plt.tight_layout()
+
+# Save before showing
+plt.savefig(os.path.join(results_dir, 'Distribution_of_Sale_Amounts.jpg'))
+plt.savefig(os.path.join(results_dir, 'Distribution_of_Sale_Amounts.png'))
+
+plt.show()
+
+
+```
+
+#### Iterpretation : Distribution Of Sales Amount
+The histogram above illustrates the distribution of property **sale amounts** across the dataset (filtered to exclude extreme outliers above \$1M) \Here's a detailed breakdown of what the plot reveals:
+
+* **Skewness**:
+  The distribution is clearly **right-skewed** — a common pattern in real estate. Most properties are sold for relatively modest amounts, with fewer sales occurring at very high prices.
+
+* **Mode (Most Frequent Range)**:
+  The tallest bars are centered around **\$150,000 to \$200,000**, where we see the **peak number of transactions** (over 12,000). This suggests the majority of homes fall within this pricing range.
+
+* **Density Curve (KDE)**:
+  The smooth blue curve overlays the bars and visually reinforces the distribution shape. The sharp rise and gradual taper highlight the **concentration of mid-priced properties**, followed by a **long tail** extending toward higher prices.
+
+* **Spread**:
+  Sale amounts range broadly from near **\$0 up to around \$700,000**, with fewer properties selling at the extremes. The lower end includes possible undervalued or distressed sales, while the upper end includes premium properties.
+
+* **Implications**:
+  This right skew implies that using the **median sale price** is more appropriate than the mean, which may be inflated by a small number of expensive sales. The long tail also suggests **log transformation** might be useful if this variable is used in predictive modeling.
+
+### Number of Properties by Residential Type
+
+
+```{python}
+#| warning: false
+plt.figure(figsize=(8, 5))
+sns.countplot(data=real_estate, 
+              x='Residential Type', 
+              order=real_estate['Residential Type'].value_counts().index, 
+              palette='Blues',)
+color_discrete_sequence=px.colors.sequential.RdBu
+plt.title('Count of Each Residential Type')
+plt.xlabel('Residential Type')
+plt.ylabel('Number of Properties')
+plt.xticks(rotation=30)
+plt.tight_layout()
+
+# Save before showing
+plt.savefig(os.path.join(results_dir, 'Count_of_Each_Residential_Type.jpg'))
+plt.savefig(os.path.join(results_dir, 'Count_of_Each_Residential_Type.png'))
+
+plt.show()
+
+```
+
+#### Interpretation: Count of Each Residential Type
+
+The bar chart above displays the distribution of properties by Residential Type, giving us a categorical breakdown of the housing structures in the dataset.
+
+- **Dominance of Single Family Homes:**
+Single Family residences are the most common type in the dataset, significantly outnumbering all other categories. This reflects the typical composition of residential areas, where detached homes are the standard property form.
+
+- **Prevalence of Condos and Two Family Units:**
+Condo units and Two Family homes are also quite prominent, suggesting a good mix of individual and shared housing structures. Condos may be more concentrated in urban centers, while Two Family homes could reflect multi-generational housing or rental opportunities.
+
+- **Smaller Share of Three and Four Family Homes:**
+Three Family and especially Four Family properties are much less common. These types likely represent either older constructions, niche rental properties, or homes in specific zoning areas that allow multi-unit dwellings.
+
+- **Insights for Market Segmentation:**
+Understanding this breakdown is valuable for market analysis and pricing comparisons. For example, pricing strategies, maintenance costs, and investment appeal can differ greatly between Single Family and multi-family properties.
+
+### Number of Properties By Sales Ratio
+```{python}
+#| label: clean-sales-ratio
+#| echo: true
+#| warning: false
+
+# Ensure numeric conversion
+real_estate['Sales Ratio'] = pd.to_numeric(real_estate['Sales Ratio'], errors='coerce')
+
+# Replace inf and -inf with NaN
+real_estate = real_estate.replace([np.inf, -np.inf], np.nan)
+
+# Drop rows with NaN in Sales Ratio
+real_estate = real_estate.dropna(subset=['Sales Ratio'])
+
+```
+
+
+```{python}
+#| warning: false
+plt.figure(figsize=(10, 6))
+sns.histplot(real_estate['Sales Ratio'], bins=30, kde=True, color='skyblue')
+
+plt.title('Distribution of Sales Ratio')
+plt.xlabel('Sales Ratio')
+plt.ylabel('Number of Properties')
+plt.tight_layout()
+
+# Save before showing
+plt.savefig(os.path.join(results_dir, 'Distribution_of_Sales_Ratio.jpg'))
+plt.savefig(os.path.join(results_dir, 'Distribution_of_Sales_Ratio.png'))
+
+plt.show()
+
+```
+
+#### Interpretation: Distribution Of Sales Ratio
+This histogram displays the distribution of the **Sales Ratio**, which compares a property's sale price to its assessed value (i.e., `Sale Amount ÷ Assessed Value`). Here's what the chart reveals:
+
+* **Peak & Central Tendency**:
+  The distribution peaks around a **Sales Ratio of \~0.65**, indicating that most properties were sold for about **65% of their assessed value**. This suggests a tendency toward undervaluation or conservative government assessments.
+
+* **Distribution Shape**:
+  The plot is **slightly right-skewed**, but generally resembles a **bell-shaped (normal-like) curve**. The bulk of the properties lie between **0.5 and 0.8**, forming a concentrated central cluster.
+
+* **Lower and Upper Bounds**:
+
+  * **Minimum** visible in this plot: around **0.3**
+  * **Maximum** visible: just above **1.0**, with very few properties exceeding the assessed value
+  * A **Sales Ratio of 1.0** represents a perfect match between market sale and assessed value. Only a **small tail** of properties is observed beyond that point.
+
+* **Market Insight**:
+  The fact that the vast majority of Sales Ratios are **below 1.0** implies that properties in this dataset typically sold for **less than their assessed value**, which could reflect:
+
+  * An overestimation by assessors,
+  * A cooling market,
+  * Or simply negotiated discounts.
+
+* **Implication for Valuation Models**:
+  The Sales Ratio provides valuable insight into how closely government-assessed values align with actual market behavior.
+  
+
+ - A Sales Ratio below 1.0 (which is the majority) suggests that most properties were sold for less than their assessed value, potentially indicating that assessments are overestimated.
+
+ - A Sales Ratio close to or above 1.0 suggests properties that sold at or above their assessed values—this may indicate strong demand or accurate valuation.
+
+### Sales by Top 20 Towns
+
+
+```{python}
+#| warning: false
+plt.figure(figsize=(12, 6))
+
+# Get top 20 towns by count
+top_towns = real_estate['Town'].value_counts().nlargest(20).index
+
+sns.countplot(data=real_estate, x='Town', order=top_towns, palette='Blues')
+# blues = blues[::-1]
+# sns.set_palette(blues)
+plt.title('Top 20 Towns by Number of Sales')
+plt.xlabel('Town')
+plt.ylabel('Number of Sales')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+# Save before showing
+plt.savefig(os.path.join(results_dir, 'Top_20_Towns_by_Number_of_Sales.jpg'))
+plt.savefig(os.path.join(results_dir, 'Top_20_Towns_by_Number_of_Sales.png'))
+
+plt.show()
+
+
+```
+
+#### Interpretation: Top 20 Towns by Number of Sales
+This bar chart displays the 20 towns with the highest number of real estate transactions. Each bar reflects the volume of property sales in a given town.
+
+**Key Observations:**
+Bridgeport dominates the chart with nearly 6,000 sales, significantly ahead of the second-place town. This sharp lead indicates a highly active real estate market in Bridgeport.
+
+Hamden, Waterbury, and Stamford follow with over 3,000 sales each, showing strong but more moderate activity.
+
+From Meriden onward, the number of sales gradually decreases, but all towns shown still reflect high engagement in the market compared to the full list of towns in the dataset.
+
+The bars are relatively evenly spaced among the rest, suggesting a moderately competitive real estate environment in those areas.
+
+**Implications:**
+Bridgeport's high sales volume might be attributed to factors like population size, housing turnover, or market affordability. It could be a prime candidate for targeted investment or policy focus.
+
+Towns like Hamden, Waterbury, and Stamford may represent stable and active secondary markets, appealing to both buyers and sellers.
+
+Local authorities and developers might consider prioritizing infrastructure, zoning, or community development efforts in the top towns to support continued growth and meet demand.
+
+### Averagae Sales Ratio By Town
+
+```{python}
+#| echo: false
+#| output: false
+#| warning: false
+# Calculate average sales ratio by Town and Residential_Category
+avg_sales_ratio = real_estate.groupby(['Town', 'Residential Type'])['Sales Ratio'].mean().reset_index()
+```
+
+```{python}
+# Select top 5 towns by number of sales
+#| echo: false
+#| output: false
+#| warning: false
+top_towns = real_estate['Town'].value_counts().nlargest(5).index
+avg_sales_ratio_top = avg_sales_ratio[avg_sales_ratio['Town'].isin(top_towns)]
+```
+
+```{python}
+#| warning: false
+plt.figure(figsize=(15, 10))
+sns.barplot(data=avg_sales_ratio_top, x='Town', y='Sales Ratio', hue='Residential Type', palette='Blues')
+
+plt.title('Average Sales Ratio per Town by Residential Type (Top 5 Towns)')
+plt.xlabel('Town')
+plt.ylabel('Average Sales Ratio')
+plt.xticks(rotation=45, ha='right')
+plt.legend(title='Residential Type', bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.show
+plt.savefig(os.path.join(results_dir, 'income_distribution_by_agegroup_bar_plot.jpg'))
+plt.savefig(os.path.join(results_dir, 'income_distribution_by_agegroup_bar_plot.png'))
+
+
+```
+> #### Interpretation: Average Sales Ratio per Town by Residential Type  
+> This grouped bar chart shows the **average sales ratio** for different **residential types** across the **top 5 towns**: Bridgeport, Hamden, Meriden, Stamford, and Waterbury.  
+>  
+> - Across all towns, **single-residence** and **triplex-residence** types tend to exhibit **higher average sales ratios**, often exceeding 0.65.  
+> - **Quadplex-residences** generally show the **lowest average sales ratios**, especially in Stamford and Waterbury.  
+> - Hamden and Meriden stand out for having **consistently higher sales ratios**, suggesting stronger or more stable housing demand.  
+>  
+> This plot reveals that **both town and residential type** play a role in market performance — an important insight for investors, analysts, and policymakers.
+
+
+### Average Sale Amount By List Year 
+
+```{python}
+#| echo: false
+#| output: false
+#| warning: false
+# Group and average
+avg_sale_by_year = real_estate.groupby('List Year', as_index=False)['Sale Amount'].mean()
+
+```
+
+
+```{python}
+#| warning: false
+# Plot
+plt.figure(figsize=(10, 6))
+sns.lineplot(data=avg_sale_by_year, x='List Year', y='Sale Amount', marker='o', color='teal')
+
+plt.title('Average Sale Amount by List Year')
+plt.xlabel('List Year')
+plt.ylabel('Average Sale Amount')
+plt.xticks(avg_sale_by_year['List Year'])  # Ensure only full years on x-axis
+plt.tight_layout()
+
+# Save before showing
+plt.savefig(os.path.join(results_dir, 'Average_Sale_Amount_by_List_Year.jpg'))
+plt.savefig(os.path.join(results_dir, 'Average_Sale_Amount_by_List_Year.png'))
+
+plt.show()
+
+
+```
+> #### Interpretation: Actual Sale Amounts Over Time  
+> This line chart illustrates the **actual sale amounts** for properties across the time range.  
+>  
+> - From **2016 to 2018**, sales activity was relatively **lower**, possibly indicating fewer transactions or lower market demand.  
+> - A significant **rise in sales amounts** begins in **2018 and continues into 2019**, closely aligning with the assessed value increase from the same period.  
+> - The post-2018 surge suggests a **market shift** where real buyer activity and transaction values started matching the earlier assessment growth.  
+>  
+> This chart highlights how **market realization (sales)** tends to **follow assessment trends**, reflecting delayed responses in actual property transactions.
+
+
+### Average Assessed Value By List Year
+
+```{python}
+#| echo: false
+#| output: false
+#| warning: false
+# Group and average
+avg_sale_by_year = real_estate.groupby('List Year', as_index=False)['Assessed Value'].mean()
+```
+
+```{python}
+#| warning: false
+# Plot
+plt.figure(figsize=(10, 6))
+sns.lineplot(data=avg_sale_by_year, x='List Year', y='Assessed Value', marker='o', color='teal')
+
+plt.title('Average Assessed Value by List Year')
+plt.xlabel('List Year')
+plt.ylabel('Average Assessed Value')
+plt.xticks(avg_sale_by_year['List Year'])  # Ensure only full years on x-axis
+plt.tight_layout()
+
+# Save before showing
+plt.savefig(os.path.join(results_dir, 'Average_Assessed Value_by_List_Year.jpg'))
+plt.savefig(os.path.join(results_dir, 'Average_Assessed Value_by_List_Year.png'))
+
+plt.show()
+
+
+```
+> ####  Interpretation: Assessed Property Values Over Time  
+> This line chart displays how the **assessed property values** changed over the analyzed period.  
+>  
+> - Between **2016 and 2018**, the assessed values were relatively **higher**, indicating consistent or anticipated market value during that period.  
+> - From **2018 to 2019**, there is a noticeable **upward boost**, showing a sharp increase in assessment values — possibly due to reevaluation of properties or broader economic factors.  
+> - This trend suggests that the **market's perceived value of properties increased before actual sales amounts caught up**.  
+>  
+> Overall, assessed values may reflect **official estimates or expectations** in the housing market, which can precede actual pricing behavior.
+
+
+
+### Residential Type Distribution
+
+
+```{python}
+#| echo: false
+#| output: false
+#| warning: false
+# Count residential categories
+res_cat_counts = real_estate['Residential Type'].value_counts()
+```
+
+```{python}
+#| warning: false
+# Plot pie chart
+plt.figure(figsize=(15, 10))
+plt.pie(res_cat_counts, labels=res_cat_counts.index, autopct='%1.1f%%', startangle=140, pctdistance=0.55, labeldistance=1.05, colors=sns.color_palette('Blues'))
+plt.title('Residential Type Distribution')
+
+# Save as image
+plt.savefig(os.path.join(results_dir, 'Residential_Type_Distribution.jpg'))
+plt.savefig(os.path.join(results_dir, 'Residential_Type_Distribution.png'))
+
+plt.show()
+
+
+```
+> #### Interpretation: Residential Type Distribution  
+> This pie chart illustrates the **distribution of property types** in the dataset.  
+>  
+> - **Single-residence** properties dominate the dataset, making up **72.2%** of all records — indicating a clear market focus.  
+> - **Appartments** come next at **20.6%**, followed by **duplex-residences** (**4.7%**), with **triplex** and **quadplex** residences making up the smallest shares (**2.1%** and **0.4%**, respectively).  
+>  
+> The visualization reveals that **multi-family housing** (duplex, triplex, quadplex) is relatively rare compared to **individual residential units**, which may reflect development patterns or buyer preferences.
+
+
+
+
