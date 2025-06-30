@@ -270,43 +270,54 @@ Three Family and especially Four Family properties are much less common. These t
 Understanding this breakdown is valuable for market analysis and pricing comparisons. For example, pricing strategies, maintenance costs, and investment appeal can differ greatly between Single Family and multi-family properties.
 
 ### Number of Properties By Sales Ratio
+
 ```{python}
-#| label: clean-sales-ratio
+
+#| label: test-sales-ratio-residential-type
 #| echo: true
 #| warning: false
 
-# Ensure numeric conversion
-real_estate['Sales Ratio'] = pd.to_numeric(real_estate['Sales Ratio'], errors='coerce')
+import pandas as pd
+import scipy.stats as stats
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-# Replace inf and -inf with NaN
-real_estate = real_estate.replace([np.inf, -np.inf], np.nan)
+# Filter the relevant columns
+data = real_estate[['Sales Ratio', 'Residential Type']].dropna()
 
-# Drop rows with NaN in Sales Ratio
-real_estate = real_estate.dropna(subset=['Sales Ratio'])
+# Group into lists per category
+groups = [group['Sales Ratio'].values for name, group in data.groupby('Residential Type')]
 
-```
-
-
-```{python}
-#| warning: false
-plt.figure(figsize=(10, 6))
-sns.histplot(real_estate['Sales Ratio'], bins=30, kde=True, color='skyblue')
-
-plt.title('Distribution of Sales Ratio')
-plt.xlabel('Sales Ratio')
-plt.ylabel('Number of Properties')
+# Visualize distributions
+plt.figure(figsize=(10, 5))
+sns.boxplot(x='Residential Type', y='Sales Ratio', data=data, palette='pastel')
+plt.title('Sales Ratio Distribution by Residential Type')
+plt.xticks(rotation=15)
 plt.tight_layout()
-
-# Save before showing
-plt.savefig(os.path.join(results_dir, 'Distribution_of_Sales_Ratio.jpg'))
-plt.savefig(os.path.join(results_dir, 'Distribution_of_Sales_Ratio.png'))
-
 plt.show()
 
+# Check normality (Shapiro test for one group example)
+normality_test = stats.shapiro(groups[0])  # just one group
+print(f"Shapiro-Wilk test on one group: p-value = {normality_test.pvalue:.4f}")
+
+# Levene's Test for equal variances
+levene_test = stats.levene(*groups)
+print(f"Levene’s Test for Equal Variances: p-value = {levene_test.pvalue:.4f}")
+
+# One-way ANOVA
+anova_result = stats.f_oneway(*groups)
+print(f"\nOne-Way ANOVA Result:")
+print(f"F-statistic = {anova_result.statistic:.4f}, p-value = {anova_result.pvalue:.4f}")
+
+# Kruskal-Wallis Test (non-parametric)
+kruskal_result = stats.kruskal(*groups)
+print(f"\nKruskal-Wallis H-test Result:")
+print(f"H-statistic = {kruskal_result.statistic:.4f}, p-value = {kruskal_result.pvalue:.4f}")
 ```
 
 #### Interpretation: Distribution Of Sales Ratio
 This histogram displays the distribution of the **Sales Ratio**, which compares a property's sale price to its assessed value (i.e., `Sale Amount ÷ Assessed Value`). Here's what the chart reveals:
+
 
 * **Peak & Central Tendency**:
   The distribution peaks around a **Sales Ratio of \~0.65**, indicating that most properties were sold for about **65% of their assessed value**. This suggests a tendency toward undervaluation or conservative government assessments.

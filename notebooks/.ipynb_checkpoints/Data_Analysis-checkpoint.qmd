@@ -193,19 +193,29 @@ This section highlights the composition and variety within the categorical featu
 
 ```{python}
 #| warning: false
-plt.figure(figsize=(10, 6))
-sns.histplot(real_estate['Sale Amount'], bins=30, kde=True, color='skyblue')
+# Create the histogram
+fig = px.histogram(
+    real_estate,
+    x='Sale Amount',
+    nbins=30,
+    title='Distribution of Sale Amounts',
+    labels={'Sale Amount': 'Sale Amount'},
+    color_discrete_sequence=['skyblue']
+)
 
-plt.title('Distribution of Sale Amounts')
-plt.xlabel('Sale Amount')
-plt.ylabel('Number of Properties')
-plt.tight_layout()
+# Update layout for better visuals
+fig.update_layout(
+    xaxis_title='Sale Amount',
+    yaxis_title='Number of Properties',
+    bargap=0.1,
+    template='plotly_white'
+)
 
-# Save before showing
-plt.savefig(os.path.join(results_dir, 'Distribution_of_Sale_Amounts.jpg'))
-plt.savefig(os.path.join(results_dir, 'Distribution_of_Sale_Amounts.png'))
+# Make responsive and show hover/click info
+fig.show(config={"responsive": True})
 
-plt.show()
+fig.write_image(os.path.join(results_dir, 'Distribution_of_Sale_Amounts.jpg'))
+fig.write_image(os.path.join(results_dir, 'Distribution_of_Sale_Amounts.png'))
 
 
 ```
@@ -233,23 +243,33 @@ The histogram above illustrates the distribution of property **sale amounts** ac
 
 ```{python}
 #| warning: false
-plt.figure(figsize=(8, 5))
-sns.countplot(data=real_estate, 
-              x='Residential Type', 
-              order=real_estate['Residential Type'].value_counts().index, 
-              palette='Blues',)
-color_discrete_sequence=px.colors.sequential.RdBu
-plt.title('Count of Each Residential Type')
-plt.xlabel('Residential Type')
-plt.ylabel('Number of Properties')
-plt.xticks(rotation=30)
-plt.tight_layout()
+# Count the number of properties per Residential Type
+res_type_counts = real_estate['Residential Type'].value_counts().reset_index()
+res_type_counts.columns = ['Residential Type', 'Count']
 
-# Save before showing
-plt.savefig(os.path.join(results_dir, 'Count_of_Each_Residential_Type.jpg'))
-plt.savefig(os.path.join(results_dir, 'Count_of_Each_Residential_Type.png'))
+# Create bar chart
+fig = px.bar(
+    res_type_counts,
+    x='Residential Type',
+    y='Count',
+    title='Count of Each Residential Type',
+    color_discrete_sequence=['#1f77b4']
+)
 
-plt.show()
+fig.update_layout(
+    xaxis_title='Residential Type',
+    yaxis_title='Number of Properties',
+    xaxis_tickangle=30,
+    template='plotly_white'
+)
+
+# Show interactive chart
+fig.show(config={"responsive": True})
+
+# Save images
+fig.write_image(os.path.join(results_dir, 'Count_of_Each_Residential_Type.jpg'))
+fig.write_image(os.path.join(results_dir, 'Count_of_Each_Residential_Type.png'))
+
 
 ```
 
@@ -289,19 +309,29 @@ real_estate = real_estate.dropna(subset=['Sales Ratio'])
 
 ```{python}
 #| warning: false
-plt.figure(figsize=(10, 6))
-sns.histplot(real_estate['Sales Ratio'], bins=30, kde=True, color='skyblue')
+# Create histogram of Sales Ratio
+fig = px.histogram(
+    real_estate,
+    x='Sales Ratio',
+    nbins=30,
+    title='Distribution of Sales Ratio',
+    labels={'Sales Ratio': 'Sales Ratio'},
+    color_discrete_sequence=['skyblue']
+)
 
-plt.title('Distribution of Sales Ratio')
-plt.xlabel('Sales Ratio')
-plt.ylabel('Number of Properties')
-plt.tight_layout()
+fig.update_layout(
+    xaxis_title='Sales Ratio',
+    yaxis_title='Number of Properties',
+    bargap=0.1,
+    template='plotly_white'
+)
 
-# Save before showing
-plt.savefig(os.path.join(results_dir, 'Distribution_of_Sales_Ratio.jpg'))
-plt.savefig(os.path.join(results_dir, 'Distribution_of_Sales_Ratio.png'))
+fig.show(config={"responsive": True})
 
-plt.show()
+# Save images
+fig.write_image(os.path.join(results_dir, 'Distribution_of_Sales_Ratio.jpg'))
+fig.write_image(os.path.join(results_dir, 'Distribution_of_Sales_Ratio.png'))
+
 
 ```
 
@@ -340,25 +370,31 @@ This histogram displays the distribution of the **Sales Ratio**, which compares 
 
 ```{python}
 #| warning: false
-plt.figure(figsize=(12, 6))
-
 # Get top 20 towns by count
-top_towns = real_estate['Town'].value_counts().nlargest(20).index
+top_towns = real_estate['Town'].value_counts().nlargest(20).reset_index()
+top_towns.columns = ['Town', 'Count']
 
-sns.countplot(data=real_estate, x='Town', order=top_towns, palette='Blues')
-# blues = blues[::-1]
-# sns.set_palette(blues)
-plt.title('Top 20 Towns by Number of Sales')
-plt.xlabel('Town')
-plt.ylabel('Number of Sales')
-plt.xticks(rotation=45, ha='right')
-plt.tight_layout()
-# Save before showing
-plt.savefig(os.path.join(results_dir, 'Top_20_Towns_by_Number_of_Sales.jpg'))
-plt.savefig(os.path.join(results_dir, 'Top_20_Towns_by_Number_of_Sales.png'))
+# Create bar chart
+fig = px.bar(
+    top_towns,
+    x='Town',
+    y='Count',
+    title='Top 20 Towns by Number of Sales',
+    color_discrete_sequence=['skyblue']
+)
 
-plt.show()
+fig.update_layout(
+    xaxis_title='Town',
+    yaxis_title='Number of Sales',
+    xaxis_tickangle=45,
+    template='plotly_white'
+)
 
+fig.show(config={"responsive": True})
+
+# Save images
+fig.write_image(os.path.join(results_dir, 'Top_20_Towns_by_Number_of_Sales.jpg'))
+fig.write_image(os.path.join(results_dir, 'Top_20_Towns_by_Number_of_Sales.png'))
 
 ```
 
@@ -402,18 +438,38 @@ avg_sales_ratio_top = avg_sales_ratio[avg_sales_ratio['Town'].isin(top_towns)]
 
 ```{python}
 #| warning: false
-plt.figure(figsize=(15, 10))
-sns.barplot(data=avg_sales_ratio_top, x='Town', y='Sales Ratio', hue='Residential Type', palette='Blues')
+# Calculate average sales ratio by Town and Residential Type
+avg_sales_ratio = real_estate.groupby(['Town', 'Residential Type'])['Sales Ratio'].mean().reset_index()
 
-plt.title('Average Sales Ratio per Town by Residential Type (Top 5 Towns)')
-plt.xlabel('Town')
-plt.ylabel('Average Sales Ratio')
-plt.xticks(rotation=45, ha='right')
-plt.legend(title='Residential Type', bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.tight_layout()
-plt.show
-plt.savefig(os.path.join(results_dir, 'income_distribution_by_agegroup_bar_plot.jpg'))
-plt.savefig(os.path.join(results_dir, 'income_distribution_by_agegroup_bar_plot.png'))
+# Select top 5 towns by number of sales
+top_towns = real_estate['Town'].value_counts().nlargest(5).index
+avg_sales_ratio_top = avg_sales_ratio[avg_sales_ratio['Town'].isin(top_towns)]
+
+# Create grouped bar chart
+fig = px.bar(
+    avg_sales_ratio_top,
+    x='Town',
+    y='Sales Ratio',
+    color='Residential Type',
+    barmode='group',
+    title='Average Sales Ratio per Town by Residential Type (Top 5 Towns)',
+    color_discrete_sequence=px.colors.sequential.Blues
+)
+
+fig.update_layout(
+    xaxis_title='Town',
+    yaxis_title='Average Sales Ratio',
+    xaxis_tickangle=45,
+    template='plotly_white',
+    legend_title_text='Residential Type'
+)
+
+fig.show(config={"responsive": True})
+
+# Save images
+fig.write_image(os.path.join(results_dir, 'income_distribution_by_agegroup_bar_plot.jpg'))
+fig.write_image(os.path.join(results_dir, 'income_distribution_by_agegroup_bar_plot.png'))
+
 
 
 ```
@@ -442,21 +498,32 @@ avg_sale_by_year = real_estate.groupby('List Year', as_index=False)['Sale Amount
 ```{python}
 #| warning: false
 # Plot
-plt.figure(figsize=(10, 6))
-sns.lineplot(data=avg_sale_by_year, x='List Year', y='Sale Amount', marker='o', color='teal')
+# Group and average
+avg_sale_by_year = real_estate.groupby('List Year', as_index=False)['Sale Amount'].mean()
 
-plt.title('Average Sale Amount by List Year')
-plt.xlabel('List Year')
-plt.ylabel('Average Sale Amount')
-plt.xticks(avg_sale_by_year['List Year'])  # Ensure only full years on x-axis
-plt.tight_layout()
+# Create line chart with markers
+fig = px.line(
+    avg_sale_by_year,
+    x='List Year',
+    y='Sale Amount',
+    title='Average Sale Amount by List Year',
+    markers=True,
+    line_shape='linear',
+    color_discrete_sequence=['teal']
+)
 
-# Save before showing
-plt.savefig(os.path.join(results_dir, 'Average_Sale_Amount_by_List_Year.jpg'))
-plt.savefig(os.path.join(results_dir, 'Average_Sale_Amount_by_List_Year.png'))
+fig.update_layout(
+    xaxis_title='List Year',
+    yaxis_title='Average Sale Amount',
+    xaxis=dict(tickmode='linear', tickvals=avg_sale_by_year['List Year']),
+    template='plotly_white'
+)
 
-plt.show()
+fig.show(config={"responsive": True})
 
+# Save images
+fig.write_image(os.path.join(results_dir, 'Average_Sale_Amount_by_List_Year.jpg'))
+fig.write_image(os.path.join(results_dir, 'Average_Sale_Amount_by_List_Year.png'))
 
 ```
 > #### Interpretation: Actual Sale Amounts Over Time  
@@ -482,21 +549,32 @@ avg_sale_by_year = real_estate.groupby('List Year', as_index=False)['Assessed Va
 ```{python}
 #| warning: false
 # Plot
-plt.figure(figsize=(10, 6))
-sns.lineplot(data=avg_sale_by_year, x='List Year', y='Assessed Value', marker='o', color='teal')
+# Group and average
+avg_sale_by_year = real_estate.groupby('List Year', as_index=False)['Assessed Value'].mean()
 
-plt.title('Average Assessed Value by List Year')
-plt.xlabel('List Year')
-plt.ylabel('Average Assessed Value')
-plt.xticks(avg_sale_by_year['List Year'])  # Ensure only full years on x-axis
-plt.tight_layout()
+# Create line chart
+fig = px.line(
+    avg_sale_by_year,
+    x='List Year',
+    y='Assessed Value',
+    title='Average Assessed Value by List Year',
+    markers=True,
+    line_shape='linear',
+    color_discrete_sequence=['teal']
+)
 
-# Save before showing
-plt.savefig(os.path.join(results_dir, 'Average_Assessed Value_by_List_Year.jpg'))
-plt.savefig(os.path.join(results_dir, 'Average_Assessed Value_by_List_Year.png'))
+fig.update_layout(
+    xaxis_title='List Year',
+    yaxis_title='Average Assessed Value',
+    xaxis=dict(tickmode='linear', tickvals=avg_sale_by_year['List Year']),
+    template='plotly_white'
+)
 
-plt.show()
+fig.show(config={"responsive": True})
 
+# Save images
+fig.write_image(os.path.join(results_dir, 'Average_Assessed_Value_by_List_Year.jpg'))
+fig.write_image(os.path.join(results_dir, 'Average_Assessed_Value_by_List_Year.png'))
 
 ```
 > ####  Interpretation: Assessed Property Values Over Time  
@@ -524,16 +602,39 @@ res_cat_counts = real_estate['Residential Type'].value_counts()
 ```{python}
 #| warning: false
 # Plot pie chart
-plt.figure(figsize=(15, 10))
-plt.pie(res_cat_counts, labels=res_cat_counts.index, autopct='%1.1f%%', startangle=140, pctdistance=0.55, labeldistance=1.05, colors=sns.color_palette('Blues'))
-plt.title('Residential Type Distribution')
+# Prepare data
+res_cat_counts = real_estate['Residential Type'].value_counts().reset_index()
+res_cat_counts.columns = ['Residential Type', 'Count']
 
-# Save as image
-plt.savefig(os.path.join(results_dir, 'Residential_Type_Distribution.jpg'))
-plt.savefig(os.path.join(results_dir, 'Residential_Type_Distribution.png'))
+# Create pie chart
+fig = px.pie(
+    res_cat_counts,
+    names='Residential Type',
+    values='Count',
+    title='Residential Type Distribution',
+    color_discrete_sequence=px.colors.sequential.Blues,
+    hole=0
+)
 
-plt.show()
+# Show values inside slices
+fig.update_traces(
+    textinfo='percent+label',
+    textposition='inside',
+    insidetextorientation='radial'
+)
 
+# Update layout: increase figure size
+fig.update_layout(
+    template='plotly_white',
+    width=800,
+    height=600
+)
+
+fig.show(config={"responsive": True})
+
+# Save images
+fig.write_image(os.path.join(results_dir, 'Residential_Type_Distribution.jpg'))
+fig.write_image(os.path.join(results_dir, 'Residential_Type_Distribution.png'))
 
 ```
 > #### Interpretation: Residential Type Distribution  
